@@ -1,7 +1,7 @@
 const path = require('node:path');
 
 const { EnvironmentPlugin } = require('webpack');
-const { merge } = require('webpack-merge');
+const { mergeWithRules } = require('webpack-merge');
 
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const ESLintPlugin = require('eslint-webpack-plugin');
@@ -35,8 +35,12 @@ const defaultConfig = {
     rules: [
       {
         test: /\.(ts|tsx)$/,
-        use: 'ts-loader',
+        use: 'babel-loader',
         exclude: /node_modules/,
+      },
+      {
+        test: /\.css$/,
+        use: [MiniCssExtractPlugin.loader, 'css-loader', 'postcss-loader'],
       },
       {
         test: /\.(png|jpg|gif)$/i,
@@ -51,12 +55,8 @@ const defaultConfig = {
     ],
   },
   resolve: { extensions: ['.*', '.ts', '.tsx', '.js'] },
-  performance: {
-    hints: false,
-    maxAssetSize: 400000,
-    maxEntrypointSize: 400000,
-  },
   plugins: [
+    new EnvironmentPlugin({}),
     new CleanWebpackPlugin({ cleanAfterEveryBuildPatterns: ['*.LICENSE.txt'] }),
     new ESLintPlugin(),
     new CopyPlugin({
@@ -71,6 +71,10 @@ const defaultConfig = {
         },
       ],
     }),
+    new MiniCssExtractPlugin({
+      filename: '[name].css',
+      chunkFilename: '[id].css',
+    }),
     new HtmlWebpackPlugin({
       template: path.resolve(__dirname, 'src/popup/index.html'),
       minify: true,
@@ -80,10 +84,11 @@ const defaultConfig = {
     splitChunks: {
       chunks: 'all',
       name: false,
+      maxSize: 200000, // 200KB
       cacheGroups: {
-        defaultVendors: {
+        external: {
           test: /[\\/]node_modules[\\/]/,
-          name: 'vendors',
+          name: 'external',
           chunks: 'all',
           enforce: true,
         },
@@ -95,49 +100,47 @@ const defaultConfig = {
         minify: TerserPlugin.esbuildMinify,
         terserOptions: {},
       }),
+      new CssMinimizerPlugin(),
     ],
   },
 };
 
+const mergeRules = mergeWithRules({
+  module: {
+    rules: {
+      test: 'match',
+      use: 'replace',
+    },
+  },
+  plugins: 'append',
+  optimization: {
+    minimizer: 'append',
+  },
+});
+
 module.exports = (env, argv) => {
   if (argv.mode === 'development') {
-    return merge(defaultConfig, {
+    return mergeRules(defaultConfig, {
       mode: 'development',
-      devServer: {
-        port: 3000,
-        open: true,
-      },
+      devtool: 'cheap-module-source-map',
       module: {
         rules: [
           {
-            test: /\.css$/,
-            use: ['style-loader', 'css-loader', 'postcss-loader'],
+            test: /\.(ts|tsx)$/,
+            use: 'ts-loader',
+            exclude: /node_modules/,
           },
         ],
       },
-      plugins: [new EnvironmentPlugin({})],
+      performance: {
+        hints: 'warning',
+        maxAssetSize: 400000,
+        maxEntrypointSize: 400000,
+      },
     });
   }
 
-  return merge(defaultConfig, {
+  return mergeRules(defaultConfig, {
     mode: 'production',
-    module: {
-      rules: [
-        {
-          test: /\.css$/,
-          use: [MiniCssExtractPlugin.loader, 'css-loader', 'postcss-loader'],
-        },
-      ],
-    },
-    optimization: {
-      minimizer: [new CssMinimizerPlugin()],
-    },
-    plugins: [
-      new MiniCssExtractPlugin({
-        filename: '[name].css',
-        chunkFilename: '[id].css',
-      }),
-      new EnvironmentPlugin({}),
-    ],
   });
 };

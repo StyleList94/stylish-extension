@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
 :root {
   background-color: #242424;
@@ -10,4 +8,3 @@
 body {
   min-width: 320px;
 }
-
