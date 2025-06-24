@@ -37,6 +37,7 @@ const App = () => {
 
         <div className="flex flex-col items-center gap-2">
           <button
+            type="button"
             className="flex justify-center items-center px-3 py-2 rounded-md bg-gray-600 text-white transition-colors hover:bg-gray-700"
             onClick={handleIncrease}
           >

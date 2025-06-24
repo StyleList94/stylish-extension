@@ -1,41 +1,35 @@
-import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
-import globals from 'globals';
-
-import reactPlugin from 'eslint-plugin-react';
-import reactHooks from 'eslint-plugin-react-hooks';
+import stylish from 'eslint-config-stylish';
+import stylishReact from 'eslint-config-stylish/react';
+import stylishTypeScript from 'eslint-config-stylish/typescript';
 import eslintConfigPrettier from 'eslint-config-prettier/flat';
 
 export default tseslint.config(
   { ignores: ['dist/', '*.config.js'] },
-  eslint.configs.recommended,
-  tseslint.configs.recommended,
   {
-    files: ['**/*.{js,jsx,mjs,cjs,ts,tsx}'],
-    plugins: {
-      react: reactPlugin,
-    },
-    ...reactPlugin.configs.flat.recommended,
-    languageOptions: {
-      ...reactPlugin.configs.flat.recommended.languageOptions,
-      globals: {
-        ...globals.browser,
-      },
-    },
+    files: ['**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    extends: [stylish],
     rules: {
-      ...reactPlugin.configs.flat.recommended.rules,
-      ...reactPlugin.configs.flat['jsx-runtime'].rules,
+      'no-console': 'off',
     },
   },
   {
-    files: ['**/*.{js,jsx,mjs,cjs,ts,tsx}'],
-    plugins: {
-      'react-hooks': reactHooks,
+    files: ['**/*.{js,jsx,tsx}'],
+    extends: [stylishReact],
+  },
+  {
+    files: ['**/*.{ts,mts,cts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        project: './tsconfig.json',
+        ecmaFeatures: {
+          jsx: true,
+        },
+        ecmaVersion: 12,
+        sourceType: 'module',
+      },
     },
-    rules: {
-      'react-hooks/rules-of-hooks': 'error',
-      'react-hooks/exhaustive-deps': 'warn',
-    },
+    extends: [stylishTypeScript],
   },
   eslintConfigPrettier,
 );
